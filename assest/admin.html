@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.min.js"></script>
+    <script src="https://alicdn.dancf.com/package/hlg-ui@0.27.53/index.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/axios/0.21.1/axios.js"></script>
+    <link rel="stylesheet" href="https://alicdn.dancf.com/package/hlg-ui@0.27.53/stylesheet/index.css">
+    <title>控制台</title>
+    <style>
+        body {
+            background: #fff;
+            font-family:
+                -apple-system,BlinkMacSystemFont,
+                Segoe UI,Roboto,Ubuntu,
+                Helvetica Neue,
+                Helvetica,Arial,
+                PingFang SC,
+                Hiragino Sans GB,
+                Microsoft Yahei UI,
+                Microsoft Yahei,
+                Source Han Sans CN,
+                'Segoe UI Emoji',
+                'Apple Color Emoji',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        body,html { background: #f1f1f1; }
+        * { margin: 0;padding: 0; }
+        .page { display: flex;padding: 16px; }
+        .page-left { width: 30%;display: flex;flex-direction: column;margin-right: 16px; }
+        .page-center { width: 30%; margin-right: 16px; }
+        .page-right { width: 40%;  }
+        h3 { margin-bottom: 16px; }
+        .hlg-textarea { margin-bottom: 16px; height: 200px}
+        .url { width: 100%; overflow: hidden; white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div id="app" class="page">
+        <div class="page-left">
+            <h3>添加种子</h3>
+            <hlg-input type="textarea" v-model="content"></hlg-input>
+            <hlg-button type="primary" @click="addSubmit">提交</hlg-button>
+        </div>
+        <div class="page-center">
+            <h3>当前种子列表</h3>
+            <hlg-table :data="seeds" border>
+                <hlg-table-column width="80" prop="id" label="序号" ></hlg-table-column>
+                <hlg-table-column prop="url" label="链接">
+                    <div class="url" slot-scope="scope">{{ scope.url }}</div>
+                </hlg-table-column>
+            </hlg-table>
+        </div>
+        <div class="page-right">
+            <h3>当前处理结果</h3>
+            <hlg-table :data="logs" border>
+                <hlg-table-column width="80" prop="id" label="序号" ></hlg-table-column>
+                <hlg-table-column width="80" prop="state" label="结果" ></hlg-table-column>
+                <hlg-table-column prop="url" label="链接" >
+                    <div class="url" slot-scope="scope">{{ scope.url }}</div>
+                </hlg-table-column>
+                <hlg-table-column prop="info" label="数据" ></hlg-table-column>
+            </hlg-table>
+        </div>
+    </div>
+    <script>
+        Vue.use(HLGUI);
+        var app = new Vue({
+            data: {
+                content: '',
+                seeds: [],
+                logs: [],
+            },
+            created(){
+                this.getRobotInfo();
+                setInterval(() => {
+                    this.getRobotInfo();
+                }, 1000)
+            },
+            methods: {
+                async getRobotInfo(){
+                    const res = await axios({
+                        method: 'get',
+                        url: './robot-info',
+                    })
+                    this.seeds = res.data.data.nowSeeds.map((i,index) => {
+                        return {
+                            id: index,
+                            url: i,
+                        } 
+                    });
+                    this.logs = res.data.data.logs.map((i,index) => {
+                        return {
+                            id: index,
+                            ...i,
+                        }
+                    });
+                },
+                async addSubmit(){
+                    const seeds = this.content.split(/\n/).filter(i => ('' + i).trim());
+                    const res = await axios({
+                        method: 'post',
+                        url: './add-seed',
+                        data: {
+                            seeds,
+                        }
+                    })
+                    console.log(res);
+                }
+            }
+        }).$mount('#app');
+    </script>
+</body>
+</html>
